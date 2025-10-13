@@ -1,0 +1,111 @@
+CREATE TABLE departamento
+(id VARCHAR(10) CONSTRAINT dep_id_pk PRIMARY KEY,
+nombre VARCHAR(50) CONSTRAINT dep_nom_nn NOT NULL);
+
+CREATE TABLE municipio
+(id VARCHAR(10) CONSTRAINT mun_id_pk PRIMARY KEY,
+nombre VARCHAR(50) CONSTRAINT mun_nom_nn NOT NULL,
+id_departamento VARCHAR(10) mun_iddpto_nn NOT NULL
+CONSTRAINT mun_idpto_fk REFERENCES departamento(id));
+
+CREATE TABLE vereda
+(id VARCHAR(10) CONSTRAINT ver_id_pk PRIMARY KEY,
+nombre VARCHAR(50) CONSTRAINT ver_nom_nn NOT NULL,
+id_municipio VARCHAR(10) CONSTRAINT ver_idmun_nn NOT NULL
+CONSTRAINT ver_codmun_fk REFERENCES municipio(id));
+
+CREATE TABLE propietario
+(id VARCHAR(10) CONSTRAINT prop_id_pk PRIMARY KEY,
+nombre VARCHAR(50) CONSTRAINT prop_nom_nn NOT NULL,
+rol VARCHAR(20)CONSTRAINT prop_rol_nn NOT NULL,
+dirección VARCHAR(50) CONSTRAINT prop_dir_nn NOT NULL,
+correo_electronico VARCHAR(50) CONSTRAINT prop_cor_nn NOT NULL);
+
+CREATE TABLE telefono_propietario
+(id_telefono VARCHAR(20) CONSTRAINT telpr_id_pk PRIMARY KEY,
+telefono VARCHAR(20) CONSTRAINT telpr_tel_nn NOT NULL,
+id_propietario VARCHAR(20) CONSTRAINT telpr_idpr_nn NOT NULL
+CONSTRAINT telpr_idpr_fk REFERENCES propietario(id));
+
+CREATE TABLE productor
+(id VARCHAR(10) CONSTRAINT prod_id_pk PRIMARY KEY,
+nombre VARCHAR(50) CONSTRAINT prod_nom_nn NOT NULL,
+rol VARCHAR(20)CONSTRAINT prod_rol_nn NOT NULL,
+dirección VARCHAR(50) CONSTRAINT prod_dir_nn NOT NULL,
+correo_electronico VARCHAR(50) CONSTRAINT prod_cor_nn NOT NULL);
+
+CREATE TABLE telefono_productor
+(id_telefono VARCHAR(20) CONSTRAINT telpd_id_pk PRIMARY KEY,
+telefono VARCHAR(20) CONSTRAINT telpd_tel_nn NOT NULL,
+id_productor VARCHAR(20) CONSTRAINT telpd_idpd_nn NOT NULL
+CONSTRAINT telpd_idpd_fk REFERENCES productor(id));
+
+CREATE TABLE asistente_tecnico
+(id VARCHAR(10) CONSTRAINT at_id_pk PRIMARY KEY,
+nombre VARCHAR(50) CONSTRAINT at_nom_nn NOT NULL,
+rol VARCHAR(20)CONSTRAINT at_rol_nn NOT NULL,
+dirección VARCHAR(50) CONSTRAINT at_dir_nn NOT NULL,
+correo_electronico VARCHAR(50) CONSTRAINT at_cor_nn NOT NULL,
+numero_tarjeta_profesional VARCHAR(15) CONSTRAINT at_ntp_nn NOT NULL);
+
+CREATE TABLE telefono_asistente_tecnico
+(id_telefono VARCHAR(20) CONSTRAINT telas_id_pk PRIMARY KEY,
+ telefono VARCHAR(20) CONSTRAINT telas_tel_nn NOT NULL,
+ id_asistente_tecnico VARCHAR(20) CONSTRAINT telas_idas_nn NOT NULL
+ CONSTRAINT telas_idas_fk REFERENCES asistente_tecnico(id));
+
+CREATE TABLE cultivo
+(id VARCHAR(10) CONSTRAINT cul_id_pk PRIMARY KEY,
+nombre_variedad VARCHAR(50) CONSTRAINT cul_nomva_nn NOT NULL,
+nombre_cientifico VARCHAR(50) CONSTRAINT cul_nomcie_nn NOT NULL,
+nombre_comun VARCHAR(50) CONSTRAINT cul_nomcom_nn NOT NULL,
+descripcion VARCHAR(200) CONSTRAINT cul_desc_nn NOT NULL);
+
+CREATE TABLE plaga
+(id VARCHAR(10) CONSTRAINT pla_id_pk PRIMARY KEY,
+nombre_cientifico VARCHAR(50) CONSTRAINT pla_nomcie_nn NOT NULL,
+nombre_comun VARCHAR(50) CONSTRAINT pla_nomcom_nn NOT NULL,
+descripcion VARCHAR(200) CONSTRAINT pla_desc_nn NOT NULL);
+
+CREATE TABLE lugar_produccion
+(codigo_ica VARCHAR(10) CONSTRAINT lp_id_pk PRIMARI KEY,
+id_productor VARCHAR(20) CONSTRAINT lp_idpd_nn NOT NULL
+CONSTRAINT lp_idpd_fk REFERENCES productor(id)
+id_asistente_tecnico VARCHAR(20) CONSTRAINT lp_idas_fk REFERENCES asistente_tecnico(id));
+
+CREATE TABLE inspeccion_fitosanitaria
+(codigo_ica VARCHAR(20) CONSTRAINT fito_cod_pk PRIMARY KEY,
+ fecha_inspeccion DATE CONSTRAINT fito_fch_nn NOT NULL,
+ id_asistente_tecnico VARCHAR(20) CONSTRAINT fito_idas_nn NOT NULL
+ CONSTRAINT fito_idas_fk REFERENCES asistente_tecnico(id));
+
+CREATE TABLE informe_fitosanitaria
+(codigo_ica VARCHAR(20) CONSTRAINT inf_cod_pk PRIMARY KEY);
+
+CREATE TABLE predio
+(codigo_ica VARCHAR(20) CONSTRAINT pre_cod_pk PRIMARY KEY,
+dirección VARCHAR(50) CONSTRAINT pre_dir_nn NOT NULL,
+coordenada_lat NUMBER(9,6) CONSTRAINT pre_lat_nn NOT NULL,
+coordenada_long NUMBER(9,6) CONSTRAINT pre_long_nn NOT NULL,
+area NUMBER(10, 2) CONSTRAINT pre_are_nn NOT NULL,
+id_propietario VARCHAR(20) CONSTRAINT pre_idprop_nn NOT NULL
+CONSTRAINT pre_idprop_fk REFERENCES propietario(id),
+id_vereda VARCHAR(10) CONSTRAINT pre_idver_nn NOT NULL
+CONSTRAINT pre_idver_fk REFERENCES vereda(id),
+cod_lugar_produccion VARCHAR(20) CONSTRAINT pre_lp_fk REFERENCES lugar_produccion(codigo_ica));
+
+CREATE TABLE plaga_cultivo
+(id VARCHAR(20) CONSTRAINT plcul_id_pk PRIMARY KEY,
+id_cultivo VARCHAR(20) CONSTRAINT plcul_cul_nn NOT NULL
+CONSTRAINT plcul_cul_fk REFERENCES cultivo(id),
+id_plaga VARCHAR(20) CONSTRAINT plcul_pla_fk REFERENCES plaga(id));
+
+CREATE TABLE lote
+(id VARCHAR(20) CONSTRAINT lot_id_pk PRIMARY KEY,
+area NUMBER(10, 2) CONSTRAINT lot_are_nn NOT NULL,
+fecha_siembra DATE,
+fecha_eliminacion DATE
+cod_ica_lp VARCHAR(20) CONSTRAINT lot_lp_nn NOT NULL
+CONSTRAINT lot_lp_fk REFERENCES lugar_produccion(codigo_ica,
+cod_ica_inspeccion VARCHAR(20)CONSTRAINT lot_ins_fk REFERENCES inspeccion_fitosanitaria(codigo_ica));
+4
