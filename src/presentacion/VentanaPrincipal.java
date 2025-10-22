@@ -1,8 +1,6 @@
 package presentacion;
 
 import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
 import logica.*;
 
 public class VentanaPrincipal extends JFrame {
@@ -12,6 +10,9 @@ public class VentanaPrincipal extends JFrame {
     private PanelPredio panelPredio;
     private PanelInspeccion panelInspeccion;
     private PanelRegistroResultado panelRegistro;
+    private PanelDepartamento panelDepartamento;
+    private PanelMunicipio panelMunicipio;
+    private PanelVereda panelVereda;
     private ControladorSistema controlador;
 
     public VentanaPrincipal() {
@@ -25,8 +26,15 @@ public class VentanaPrincipal extends JFrame {
         panelPredio = new PanelPredio(controlador);
         panelInspeccion = new PanelInspeccion(controlador);
         panelRegistro = new PanelRegistroResultado(controlador);
+        panelDepartamento = new PanelDepartamento(controlador);
+        panelMunicipio = new PanelMunicipio(controlador);
+        panelVereda = new PanelVereda(controlador);
 
+        // 🔹 Agregar todas las pestañas
         pestañas.addTab("Usuario", panelPropietario);
+        pestañas.addTab("Departamentos", panelDepartamento);
+        pestañas.addTab("Municipios", panelMunicipio);
+        pestañas.addTab("Veredas", panelVereda);
         pestañas.addTab("Predios", panelPredio);
         pestañas.addTab("Inspecciones", panelInspeccion);
         pestañas.addTab("Registros", panelRegistro);
