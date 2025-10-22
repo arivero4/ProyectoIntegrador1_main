@@ -103,12 +103,13 @@ public class PanelMunicipio extends JPanel {
                 return;
             }
 
-            PreparedStatement psMax = conn.prepareStatement("SELECT NVL(MAX(id),0)+1 FROM MUNICIPIO");
+            // Generar nuevo id como string (convertir a número si el id se guarda como varchar)
+            PreparedStatement psMax = conn.prepareStatement("SELECT NVL(MAX(TO_NUMBER(id)),0)+1 FROM MUNICIPIO");
             ResultSet rs = psMax.executeQuery(); rs.next();
-            int id = rs.getInt(1);
+            String id = rs.getString(1);
 
             PreparedStatement ps = conn.prepareStatement("INSERT INTO MUNICIPIO VALUES(?,?,?)");
-            ps.setInt(1, id);
+            ps.setString(1, id);
             ps.setString(2, nombre);
             ps.setString(3, idDepartamento);
             ps.executeUpdate();
@@ -171,7 +172,7 @@ public class PanelMunicipio extends JPanel {
             ps.setString(1, nombre);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                int idDep = rs.getInt("id_departamento");
+                String idDep = rs.getString("id_departamento");
                 txtNombre.setText(rs.getString("nombre"));
                 seleccionarDepartamento(idDep);
                 JOptionPane.showMessageDialog(this, "Municipio encontrado.");
@@ -184,7 +185,8 @@ public class PanelMunicipio extends JPanel {
     }
 
 
-    private void seleccionarDepartamento(int idDep) {
+    private void seleccionarDepartamento(String idDep) {
+        if (idDep == null) return;
         for (int i = 0; i < cbDepartamento.getItemCount(); i++) {
             if (cbDepartamento.getItemAt(i).startsWith(idDep + " -")) {
                 cbDepartamento.setSelectedIndex(i);
