@@ -3,254 +3,239 @@ package presentacion;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import logica.*;
-import model.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.sql.*;
+import logica.ControladorSistema;
 
 public class PanelPropietario extends JPanel {
 
-    private JTextField txtNumeroId, txtNombres, txtTelefono, txtCorreo, txtCodigoICA, txtDireccion;
-    private JComboBox<String> cmbTipoId;
-    private JButton btnRegistrar, btnConsultar, btnActualizar, btnLimpiar;
-    private ControladorSistema controlador;
+    private JTextField txtNombre, txtDireccion, txtCorreo;
+    private JTextField txtNumeroTarjeta;
+    private JComboBox<String> cbRol;
+    private JButton btnGuardar, btnActualizar, btnBuscar, btnEliminar;
+    private ControladorSistema controlador; // referencia al controlador
 
+    // Datos de conexión Oracle 
+    private final String URL = "jdbc:oracle:thin:@192.168.2.100:1521:XE";
+    private final String USUARIO = "ica2";
+    private final String CLAVE = "ica2";
+
+    // 🔹 Constructor 
     public PanelPropietario(ControladorSistema controlador) {
         this.controlador = controlador;
-        setLayout(new GridLayout(8, 2, 10, 10));
-        setBorder(BorderFactory.createTitledBorder("Gestión de Propietarios"));
+    setLayout(new GridLayout(7, 2, 10, 10));
+        setBorder(BorderFactory.createTitledBorder("Gestión de Usuarios"));
 
-        // Tipo de Identificación
-        add(new JLabel("Tipo de Identificación:"));
-        cmbTipoId = new JComboBox<>(new String[]{"CC", "NIT", "CE", "Pasaporte"});
-        add(cmbTipoId);
+        add(new JLabel("Nombre:"));
+        txtNombre = new JTextField();
+        add(txtNombre);
 
-        // Número de Identificación
-        add(new JLabel("Número de Identificación:"));
-        txtNumeroId = new JTextField();
-        add(txtNumeroId);
+        add(new JLabel("Rol:"));
+    cbRol = new JComboBox<>(new String[]{"Propietario", "Productor", "Asistente Tecnico"});
+        add(cbRol);
 
-        // Nombres Completos
-        add(new JLabel("Nombres Completos:"));
-        txtNombres = new JTextField();
-        add(txtNombres);
+    // Campo adicional para Asistente Tecnico
+    add(new JLabel("Número Tarjeta Profesional:"));
+    JTextField txtNumeroTarjetaLocal = new JTextField();
+    txtNumeroTarjetaLocal.setEnabled(false);
+    add(txtNumeroTarjetaLocal);
+    // make accessible to methods
+    this.txtNumeroTarjeta = txtNumeroTarjetaLocal;
 
+        add(new JLabel("Dirección:"));
+        txtDireccion = new JTextField();
+        add(txtDireccion);
 
-    // Teléfono de Contacto
-    add(new JLabel("Teléfono de Contacto:"));
-    txtTelefono = new JTextField();
-    add(txtTelefono);
+        add(new JLabel("Correo Electrónico:"));
+        txtCorreo = new JTextField();
+        add(txtCorreo);
 
-    // Dirección
-    add(new JLabel("Dirección:"));
-    txtDireccion = new JTextField();
-    add(txtDireccion);
-
-    // Correo Electrónico
-    add(new JLabel("Correo Electrónico:"));
-    txtCorreo = new JTextField();
-    add(txtCorreo);
-
-    // Código ICA Predio
-    add(new JLabel("Código ICA Predio:"));
-    txtCodigoICA = new JTextField();
-    add(txtCodigoICA);
-
-        // Botones
-        btnRegistrar = new JButton("Registrar");
-        btnConsultar = new JButton("Consultar");
+        btnGuardar = new JButton("Guardar");
         btnActualizar = new JButton("Actualizar");
-        btnLimpiar = new JButton("Limpiar");
+        btnBuscar = new JButton("Buscar");
+        btnEliminar = new JButton("Eliminar");
 
-        add(btnRegistrar);
-        add(btnConsultar);
+        add(btnGuardar);
         add(btnActualizar);
-        add(btnLimpiar);
+        add(btnBuscar);
+        add(btnEliminar);
 
-        // Action Listeners
-        btnRegistrar.addActionListener(e -> registrarPropietario());
-        btnConsultar.addActionListener(e -> consultarPropietario());
-        btnActualizar.addActionListener(e -> actualizarPropietario());
-        btnLimpiar.addActionListener(e -> limpiarCampos());
+        // Eventos
+        btnGuardar.addActionListener(e -> guardarRegistro());
+        btnActualizar.addActionListener(e -> actualizarRegistro());
+        btnBuscar.addActionListener(e -> buscarRegistro());
+        btnEliminar.addActionListener(e -> eliminarRegistro());
+
+        // Habilitar/deshabilitar el campo de tarjeta profesional según rol seleccionado
+        cbRol.addActionListener(e -> {
+            String seleccionado = (String) cbRol.getSelectedItem();
+            if (seleccionado != null && seleccionado.equals("Asistente Tecnico")) {
+                txtNumeroTarjeta.setEnabled(true);
+            } else {
+                txtNumeroTarjeta.setEnabled(false);
+                txtNumeroTarjeta.setText("");
+            }
+        });
     }
 
-    private void registrarPropietario() {
+    // -------------------- MÉTODOS DE CONEXIÓN Y CRUD --------------------
+    private Connection conectar() throws SQLException {
         try {
-            // Validar campos obligatorios
-            if (txtNumeroId.getText().trim().isEmpty() || txtNombres.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, 
-                    "Los campos Número de Identificación y Nombres Completos son obligatorios", 
-                    "Error de Validación", 
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+        } catch (ClassNotFoundException e) {
+            JOptionPane.showMessageDialog(this, "No se encontró el driver JDBC de Oracle");
+        }
+        return DriverManager.getConnection(URL, USUARIO, CLAVE);
+    }
 
-            // Crear objeto Propietario
-            String idUsuario = txtNumeroId.getText().trim();
-            // Validar longitud del id para coincidir con VARCHAR2(10)
-            if (idUsuario.length() > 10) {
-                JOptionPane.showMessageDialog(this,
-                    "El número de identificación es demasiado largo (máx. 10 caracteres) para la columna ID en la base de datos.",
-                    "Error de Validación",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            String rol = "Propietario";
-            java.util.List<String> permisos = new ArrayList<>(Arrays.asList("acceso_predios", "editar_predios"));
-            java.util.List<String> lugaresProduccion = new ArrayList<>();
+    private void guardarRegistro() {
+        String rolSeleccionado = cbRol.getSelectedItem().toString();
+        String tabla = rolSeleccionado.toUpperCase().replace(' ', '_');
+        String nombre = txtNombre.getText();
+        String rol = cbRol.getSelectedItem().toString();
+        String direccion = txtDireccion.getText();
+        String correo = txtCorreo.getText();
+        String numeroTarjeta = txtNumeroTarjeta.getText();
 
+        if (nombre.isEmpty() || direccion.isEmpty() || correo.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor complete todos los campos.");
+            return;
+        }
 
-
-            Propietario p = new Propietario(
-                idUsuario,
-                rol,
-                permisos,
-                (String) cmbTipoId.getSelectedItem(),
-                txtNumeroId.getText().trim(),
-                txtNombres.getText().trim(),
-                txtTelefono.getText().trim(),
-                txtCorreo.getText().trim(),
-                txtCodigoICA.getText().trim(),
-                lugaresProduccion
-            );
-            p.setDireccion(txtDireccion.getText().trim());
-            p.setDireccion(txtDireccion.getText().trim());
-
-            boolean exito = controlador.registrarPropietario(p);
-            
-            if (exito) {
-                JOptionPane.showMessageDialog(this, 
-                    "Propietario registrado exitosamente", 
-                    "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
-                limpiarCampos();
+        try (Connection conn = conectar()) {
+            String sqlMax = "SELECT NVL(MAX(id),0)+1 FROM " + tabla;
+            PreparedStatement psMax = conn.prepareStatement(sqlMax);
+            ResultSet rs = psMax.executeQuery();
+            int nuevoId = 1;
+            if (rs.next()) nuevoId = rs.getInt(1);
+            PreparedStatement ps;
+            if (rolSeleccionado.equals("Asistente Tecnico")) {
+                // Tabla ASISTENTE_TECNICO con columna NUMERO_TARJETA_PROFESIONAL
+                String sqlInsert = "INSERT INTO " + tabla + " (id, nombre, rol, direccion, correo_electronico, numero_tarjeta_profesional) VALUES (?, ?, ?, ?, ?, ?)";
+                ps = conn.prepareStatement(sqlInsert);
+                ps.setInt(1, nuevoId);
+                ps.setString(2, nombre);
+                ps.setString(3, rol);
+                ps.setString(4, direccion);
+                ps.setString(5, correo);
+                ps.setString(6, numeroTarjeta);
             } else {
-                JOptionPane.showMessageDialog(this, 
-                    "Error al registrar propietario. Verifique que no exista un propietario con la misma identificación.", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
+                String sqlInsert = "INSERT INTO " + tabla + " (id, nombre, rol, direccion, correo_electronico) VALUES (?, ?, ?, ?, ?)";
+                ps = conn.prepareStatement(sqlInsert);
+                ps.setInt(1, nuevoId);
+                ps.setString(2, nombre);
+                ps.setString(3, rol);
+                ps.setString(4, direccion);
+                ps.setString(5, correo);
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error inesperado: " + ex.getMessage(), 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
+
+            ps.executeUpdate();
+            JOptionPane.showMessageDialog(this, "Registro guardado exitosamente en tabla " + tabla + ".");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al guardar: " + ex.getMessage());
         }
     }
 
-    private void consultarPropietario() {
-        try {
-            String numeroId = txtNumeroId.getText().trim();
-            
-            if (numeroId.isEmpty()) {
-                JOptionPane.showMessageDialog(this, 
-                    "Ingrese el número de identificación a consultar", 
-                    "Error de Validación", 
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+    private void actualizarRegistro() {
+        String rolSeleccionado = cbRol.getSelectedItem().toString();
+        String tabla = rolSeleccionado.toUpperCase().replace(' ', '_');
+        String nombre = txtNombre.getText();
+        String direccion = txtDireccion.getText();
+        String correo = txtCorreo.getText();
+        String numeroTarjeta = txtNumeroTarjeta.getText();
 
-            Propietario p = controlador.consultarPropietario(numeroId);
-            
-            if (p != null) {
-                // Llenar los campos con la información del propietario
+        if (nombre.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Debe ingresar el nombre para actualizar el registro.");
+            return;
+        }
 
-                cmbTipoId.setSelectedItem(p.getTipoIdentificacion());
-                txtNombres.setText(p.getNombresCompletos());
-                txtTelefono.setText(p.getTelefonoContacto());
-                txtDireccion.setText(p.getDireccion());
-                txtCorreo.setText(p.getCorreoElectronico());
-                txtCodigoICA.setText(p.getCodigoICAPredio());
-                
-                JOptionPane.showMessageDialog(this, 
-                    "Propietario encontrado", 
-                    "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
+        try (Connection conn = conectar()) {
+            PreparedStatement ps;
+            if (rolSeleccionado.equals("Asistente Tecnico")) {
+                String sql = "UPDATE " + tabla + " SET direccion = ?, correo_electronico = ?, numero_tarjeta_profesional = ? WHERE nombre = ?";
+                ps = conn.prepareStatement(sql);
+                ps.setString(1, direccion);
+                ps.setString(2, correo);
+                ps.setString(3, numeroTarjeta);
+                ps.setString(4, nombre);
             } else {
-                JOptionPane.showMessageDialog(this, 
-                    "No se encontró el propietario con la identificación proporcionada", 
-                    "No Encontrado", 
-                    JOptionPane.WARNING_MESSAGE);
-                limpiarCampos();
+                String sql = "UPDATE " + tabla + " SET direccion = ?, correo_electronico = ? WHERE nombre = ?";
+                ps = conn.prepareStatement(sql);
+                ps.setString(1, direccion);
+                ps.setString(2, correo);
+                ps.setString(3, nombre);
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error al consultar: " + ex.getMessage(), 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
+
+            int filas = ps.executeUpdate();
+            if (filas > 0)
+                JOptionPane.showMessageDialog(this, "Registro actualizado correctamente.");
+            else
+                JOptionPane.showMessageDialog(this, "No se encontró el registro para actualizar.");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al actualizar: " + ex.getMessage());
         }
     }
 
-    private void actualizarPropietario() {
-        try {
-            // Validar campos obligatorios
-            if (txtNumeroId.getText().trim().isEmpty() || txtNombres.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, 
-                    "Los campos Número de Identificación y Nombres Completos son obligatorios", 
-                    "Error de Validación", 
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+    private void buscarRegistro() {
+        String rolSeleccionado = cbRol.getSelectedItem().toString();
+        String tabla = rolSeleccionado.toUpperCase().replace(' ', '_');
+        String nombre = txtNombre.getText();
 
-            // Crear objeto Propietario con los datos actualizados
-            String idUsuario = txtNumeroId.getText().trim();
-            // Validar longitud del id para coincidir con VARCHAR2(10)
-            if (idUsuario.length() > 10) {
-                JOptionPane.showMessageDialog(this,
-                    "El número de identificación es demasiado largo (máx. 10 caracteres) para la columna ID en la base de datos.",
-                    "Error de Validación",
-                    JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            String rol = "Propietario";
-            java.util.List<String> permisos = new ArrayList<>(Arrays.asList("acceso_predios", "editar_predios"));
-            java.util.List<String> lugaresProduccion = new ArrayList<>();
+        if (nombre.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el nombre para buscar.");
+            return;
+        }
 
-            Propietario p = new Propietario(
-                idUsuario,
-                rol,
-                permisos,
-                (String) cmbTipoId.getSelectedItem(),
-                txtNumeroId.getText().trim(),
-                txtNombres.getText().trim(),
-                txtTelefono.getText().trim(),
-                txtCorreo.getText().trim(),
-                txtCodigoICA.getText().trim(),
-                lugaresProduccion
-            );
+        try (Connection conn = conectar()) {
+            String sql = "SELECT * FROM " + tabla + " WHERE nombre = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, nombre);
+            ResultSet rs = ps.executeQuery();
 
-            boolean exito = controlador.actualizarPropietario(p);
-            
-            if (exito) {
-                JOptionPane.showMessageDialog(this, 
-                    "Propietario actualizado exitosamente", 
-                    "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
+            if (rs.next()) {
+                cbRol.setSelectedItem(rs.getString("rol"));
+                txtDireccion.setText(rs.getString("direccion"));
+                txtCorreo.setText(rs.getString("correo_electronico"));
+                if (rolSeleccionado.equals("Asistente Tecnico")) {
+                    try {
+                        txtNumeroTarjeta.setText(rs.getString("numero_tarjeta_profesional"));
+                        txtNumeroTarjeta.setEnabled(true);
+                    } catch (SQLException sq) {
+                        // columna no encontrada o null
+                        txtNumeroTarjeta.setText("");
+                        txtNumeroTarjeta.setEnabled(true);
+                    }
+                }
+                JOptionPane.showMessageDialog(this, "Registro encontrado.");
             } else {
-                JOptionPane.showMessageDialog(this, 
-                    "Error al actualizar propietario. Verifique que el propietario exista.", 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "No se encontró el registro.");
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, 
-                "Error inesperado: " + ex.getMessage(), 
-                "Error", 
-                JOptionPane.ERROR_MESSAGE);
-            ex.printStackTrace();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al buscar: " + ex.getMessage());
         }
     }
 
-    private void limpiarCampos() {
-        cmbTipoId.setSelectedIndex(0);
-    txtNumeroId.setText("");
-    txtNombres.setText("");
-    txtTelefono.setText("");
-    txtDireccion.setText("");
-    txtCorreo.setText("");
-    txtCodigoICA.setText("");
-    txtNumeroId.requestFocus();
+    private void eliminarRegistro() {
+        String rolSeleccionado = cbRol.getSelectedItem().toString();
+        String tabla = rolSeleccionado.toUpperCase().replace(' ', '_');
+        String nombre = txtNombre.getText();
+
+        if (nombre.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese el nombre para eliminar.");
+            return;
+        }
+
+        try (Connection conn = conectar()) {
+            String sql = "DELETE FROM " + tabla + " WHERE nombre = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setString(1, nombre);
+            int filas = ps.executeUpdate();
+
+            if (filas > 0)
+                JOptionPane.showMessageDialog(this, "Registro eliminado correctamente.");
+            else
+                JOptionPane.showMessageDialog(this, "No se encontró el registro para eliminar.");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Error al eliminar: " + ex.getMessage());
+        }
     }
 }
