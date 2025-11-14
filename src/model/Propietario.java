@@ -18,8 +18,8 @@ public class Propietario extends Usuario {
 		return this.direccion;
 	}
 	public String getTipoIdentificacion() {
-		// Si tienes un atributo específico, retorna ese valor. Si no, usa el método de Usuario.
-		return super.getRol(); // Cambia esto si tienes un atributo tipoIdentificacion
+		// Devolver el tipo de identificación almacenado en la superclase
+		return super.getTipoIdentificacion();
 	}
 
 	public String getNombresCompletos() {
@@ -27,8 +27,26 @@ public class Propietario extends Usuario {
 	}
 
 	public String getCodigoICAPredio() {
-		// Si tienes un atributo específico, retorna ese valor. Si no, retorna vacío o el id.
-		return this.id;
+		// Retornar el código ICA almacenado en la superclase (compatibilidad con tests)
+		return super.getCodigoICAPredio();
+	}
+
+	// Adaptador para compatibilidad con tests existentes
+	public String getIdUsuario() {
+		return this.getId();
+	}
+
+	// Adaptadores setters usados por TestPropietario
+	public void setTipoIdentificacion(String tipo) {
+		super.setTipoIdentificacion(tipo);
+	}
+
+	public void setNombresCompletos(String nombres) {
+		super.setNombre(nombres);
+	}
+
+	public void setCodigoICAPredio(String codigo) {
+		super.setCodigoICAPredio(codigo);
 	}
 
 	/**

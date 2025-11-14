@@ -227,4 +227,13 @@ public class PropietarioDAO extends UsuarioDAO {
         
         return propietario;
     }
+
+    // Compatibilidad con nombres antiguos usados por los gestores
+    public Propietario consultar(String numeroIdentificacion) {
+        return buscarPorNumeroIdentificacion(numeroIdentificacion);
+    }
+
+    public List<Propietario> listarTodos() {
+        return listar();
+    }
 }

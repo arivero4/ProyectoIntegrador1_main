@@ -30,6 +30,16 @@ public abstract class Usuario {
 	private String numeroIdentificacion;
 
 	/**
+	 * Tipo de identificación (CC, NIT, CE, etc.)
+	 */
+	private String tipoIdentificacion;
+
+	/**
+	 * Código ICA asociado a un predio (si aplica). Algunos modelos y pruebas esperan este campo.
+	 */
+	private String codigoICAPredio;
+
+	/**
 	 * Nombre completo del usuario registrado.
 	 */
 	private String nombre;
@@ -65,10 +75,12 @@ public abstract class Usuario {
 		this.rol = rol;
 		this.permisos = permisos != null ? permisos : new ArrayList<>();
 		this.numeroIdentificacion = numeroIdentificacion;
+		this.tipoIdentificacion = tipoIdentificacion != null ? tipoIdentificacion : "";
 		this.nombre = nombresCompletos;
 		this.telefonoContacto = telefonoContacto;
 		this.correoElectronico = correoElectronico;
-		// tipoIdentificacion, codigoICAPredio y lugaresProduccion pueden almacenarse en subclases si es necesario
+		// Guardar código ICA si se proporciona (compatibilidad con tests)
+		this.codigoICAPredio = codigoICAPredio != null ? codigoICAPredio : "";
 	}
 
 	/**
@@ -167,6 +179,31 @@ public abstract class Usuario {
 	 */
 	public String getCorreoElectronico() {
 		return this.correoElectronico;
+	}
+
+	/**
+	 * Devuelve el código ICA asociado (si existe)
+	 */
+	public String getCodigoICAPredio() {
+		return this.codigoICAPredio != null ? this.codigoICAPredio : "";
+	}
+
+	/**
+	 * Setter para código ICA (compatibilidad)
+	 */
+	public void setCodigoICAPredio(String codigo) {
+		this.codigoICAPredio = codigo != null ? codigo : "";
+	}
+
+	/**
+	 * Tipo de identificación getter/setter
+	 */
+	public String getTipoIdentificacion() {
+		return this.tipoIdentificacion != null ? this.tipoIdentificacion : "";
+	}
+
+	public void setTipoIdentificacion(String tipo) {
+		this.tipoIdentificacion = tipo != null ? tipo : "";
 	}
 
 }

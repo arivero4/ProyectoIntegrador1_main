@@ -47,6 +47,10 @@ public class VentanaPrincipal extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(VentanaPrincipal::new);
+        // Mostrar primero la ventana de login; VentanaPrincipal se abrirá tras autenticación
+        SwingUtilities.invokeLater(() -> {
+            LoginFrame login = new LoginFrame();
+            login.setVisible(true);
+        });
     }
 }
